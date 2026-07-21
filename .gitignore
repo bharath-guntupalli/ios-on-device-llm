@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# Xcode user state
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+
+# Build artifacts
+build/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.swiftpm/
+.build/
+
+# Model weights — never commit multi-GB GGUF files
+*.gguf
+
+# Download resume data
+*.resume
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
