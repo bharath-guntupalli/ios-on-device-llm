@@ -57,6 +57,13 @@ Model weights (~0.8–1 GB) download from [Hugging Face (bartowski's GGUF quants
 
 Append a `ModelSpec` to `ModelCatalog.all` with the GGUF download URL and the correct `ChatTemplateFamily` (`.llama3` or `.chatML`). For a new prompt format, extend `ChatTemplate`. Keep 1–2 B parameter Q4 quants for 4 GB devices; 3 B+ models need 6 GB+ of RAM.
 
+## Comparison
+| Approach | Engine Used | Model Location | Storage Needed | Device Support |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Apple Foundation Models Framework** | iOS Native System Service | OS System Partition | 0 MB | Apple Intelligence devices only |
+| **2. mlx-swift-examples (LLMEval)** | Apple's MLX Framework | App Documents (`.safetensors`) | ~1GB – 2GB per app | All Apple Silicon (iOS 17+) |
+| **3. llama.cpp (llama.swift)** | ggml C-Bindings | App Documents (`.gguf`) | ~800MB – 2GB per app | All Apple Silicon (iOS 16+) |
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
