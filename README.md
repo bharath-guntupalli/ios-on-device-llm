@@ -97,6 +97,13 @@ Same prompt set, same physical device (iPhone 12, 4 GB — the design floor), co
 - A physical device for real performance numbers — simulators have no ggml/MLX Metal backend
 - For device builds: set your Development Team and enable the **Increased Memory Limit** capability on the App ID
 
+## Comparison
+| Approach | Engine Used | Model Location | Storage Needed | Device Support |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Apple Foundation Models Framework** | iOS Native System Service | OS System Partition | 0 MB | Apple Intelligence devices only |
+| **2. mlx-swift-examples (LLMEval)** | Apple's MLX Framework | App Documents (`.safetensors`) | ~1GB – 2GB per app | All Apple Silicon (iOS 17+) |
+| **3. llama.cpp (llama.swift)** | ggml C-Bindings | App Documents (`.gguf`) | ~800MB – 2GB per app | All Apple Silicon (iOS 16+) |
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
