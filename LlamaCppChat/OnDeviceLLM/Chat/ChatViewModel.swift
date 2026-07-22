@@ -11,6 +11,7 @@
 //
 
 import Foundation
+import LLMEngineKit
 import Observation
 
 @Observable
@@ -40,14 +41,16 @@ final class ChatViewModel {
 
     init(spec: ModelSpec) {
         self.spec = spec
-        self.engine = LlamaEngine(config: EngineConfig(nCtx: spec.recommendedContext))
+        self.engine = LlamaEngine(config: EngineConfig(nCtx: spec.recommendedContext),
+                                  modelURL: spec.localURL,
+                                  family: spec.family)
     }
 
     /// Loads the model into memory. Called once from the view's .task.
     func loadEngine() async {
         loadState = .loading
         do {
-            try await engine.load(modelURL: spec.localURL, family: spec.family)
+            try await engine.load()
             loadState = .ready
         } catch {
             loadState = .failed(error.localizedDescription)

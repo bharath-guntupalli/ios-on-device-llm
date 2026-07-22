@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		42467536300F9FB700FC776E /* LlamaSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 42467535300F9FB700FC776E /* LlamaSwift */; };
-		4246754C300FA10000FC776E /* LLMEngineKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4246754B300FA10000FC776E /* LLMEngineKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,7 +28,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				42467536300F9FB700FC776E /* LlamaSwift in Frameworks */,
-				4246754C300FA10000FC776E /* LLMEngineKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -73,7 +71,6 @@
 			name = OnDeviceLLM;
 			packageProductDependencies = (
 				42467535300F9FB700FC776E /* LlamaSwift */,
-				4246754B300FA10000FC776E /* LLMEngineKit */,
 			);
 			productName = OnDeviceLLM;
 			productReference = 42467525300F994A00FC776E /* OnDeviceLLM.app */;
@@ -105,7 +102,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				42467534300F9FB700FC776E /* XCRemoteSwiftPackageReference "llama" */,
-				4246754A300FA10000FC776E /* XCLocalSwiftPackageReference "../Packages/LLMEngineKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 42467526300F994A00FC776E /* Products */;
@@ -344,13 +340,6 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		4246754A300FA10000FC776E /* XCLocalSwiftPackageReference "../Packages/LLMEngineKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../Packages/LLMEngineKit;
-		};
-/* End XCLocalSwiftPackageReference section */
-
 /* Begin XCRemoteSwiftPackageReference section */
 		42467534300F9FB700FC776E /* XCRemoteSwiftPackageReference "llama" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -363,10 +352,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		4246754B300FA10000FC776E /* LLMEngineKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = LLMEngineKit;
-		};
 		42467535300F9FB700FC776E /* LlamaSwift */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 42467534300F9FB700FC776E /* XCRemoteSwiftPackageReference "llama" */;

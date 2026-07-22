@@ -16,23 +16,7 @@
 //
 
 import Foundation
-
-/// One conversation turn.
-nonisolated struct ChatMessage: Sendable, Identifiable, Hashable {
-    enum Role: String, Sendable {
-        case system, user, assistant
-    }
-
-    let id: UUID
-    let role: Role
-    var content: String
-
-    init(id: UUID = UUID(), role: Role, content: String) {
-        self.id = id
-        self.role = role
-        self.content = content
-    }
-}
+import LLMEngineKit
 
 nonisolated struct ChatTemplate: Sendable {
     let family: ChatTemplateFamily

@@ -26,6 +26,7 @@
 //
 
 import Foundation
+import LLMEngineKit
 import LlamaSwift
 import os
 
@@ -117,8 +118,18 @@ actor LlamaEngine {
         return true
     }()
 
-    init(config: EngineConfig = EngineConfig()) {
+    /// Engine-specific configuration is injected here (not in `load()`) so
+    /// the type can satisfy `LLMEngine`'s parameterless `load()` — each
+    /// engine family wants different knobs, and the protocol stays agnostic.
+    private let modelURL: URL
+    private let family: ChatTemplateFamily
+
+    init(config: EngineConfig = EngineConfig(),
+         modelURL: URL,
+         family: ChatTemplateFamily) {
         self.config = config
+        self.modelURL = modelURL
+        self.family = family
     }
 
     deinit {
@@ -133,9 +144,9 @@ actor LlamaEngine {
 
     var isLoaded: Bool { ctx != nil }
 
-    /// Loads a GGUF model from disk with Metal offload and prepares the
+    /// Loads the GGUF model from disk with Metal offload and prepares the
     /// context, sampler chain, and reusable batch.
-    func load(modelURL: URL, family: ChatTemplateFamily) throws {
+    func load() throws {
         guard !isLoaded else { return }
         _ = Self.backendInitialized
 
@@ -427,5 +438,25 @@ actor LlamaEngine {
         let text = String(decoding: chunk, as: UTF8.self)
         pending.removeFirst(end)
         return text
+    }
+}
+
+// MARK: - LLMEngine conformance
+
+/// Adapts the actor to the showcase-wide engine abstraction. The isolated
+/// synchronous methods satisfy the protocol's `async` requirements directly.
+extension LlamaEngine: LLMEngine {
+    static var engineName: String { "llama.cpp" }
+
+    /// GGUF inference runs everywhere: Metal on device, CPU fallback on the
+    /// simulator (EngineConfig already zeroes nGpuLayers there).
+    static func availability() -> EngineAvailability { .available }
+
+    func generate(_ userMessage: String) -> AsyncThrowingStream<String, Error> {
+        generateResponse(for: userMessage)
+    }
+
+    func stopGenerating() {
+        requestStop()
     }
 }

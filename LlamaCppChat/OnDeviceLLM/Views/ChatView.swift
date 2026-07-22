@@ -8,6 +8,7 @@
 //  engine's AsyncThrowingStream yields text fragments.
 //
 
+import LLMEngineKit
 import SwiftUI
 
 struct ChatView: View {
