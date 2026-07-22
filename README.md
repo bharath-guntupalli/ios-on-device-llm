@@ -19,6 +19,7 @@ The shared protocol also demonstrates the production pattern this enables: a **f
 | Model format | GGUF (quantized) | MLX safetensors | Apple's ~3B system model |
 | Example model | Llama 3.2 1B Q4_K_M (~0.8 GB) | Llama 3.2 1B 4-bit (~0.7 GB) | built into iOS |
 | Weights download | 1 file from Hugging Face | HF repo snapshot (multi-file) | none — ships with the OS |
+| Weights stored in | App Documents (`.gguf`) | App Documents (`.safetensors`) | OS system partition (0 MB per app) |
 | Min OS / hardware | broad (Metal or CPU) | device only (Metal required) | iOS 26+, Apple Intelligence devices |
 | Simulator support | ✅ (CPU fallback) | ❌ | ⚠️ macOS host must support AI |
 | API level you touch | raw C API | high-level Swift | high-level Swift |
@@ -96,13 +97,6 @@ Same prompt set, same physical device (iPhone 12, 4 GB — the design floor), co
 - Xcode 26+, iOS 26.5 deployment target (llama.cpp app)
 - A physical device for real performance numbers — simulators have no ggml/MLX Metal backend
 - For device builds: set your Development Team and enable the **Increased Memory Limit** capability on the App ID
-
-## Comparison
-| Approach | Engine Used | Model Location | Storage Needed | Device Support |
-| :--- | :--- | :--- | :--- | :--- |
-| **1. Apple Foundation Models Framework** | iOS Native System Service | OS System Partition | 0 MB | Apple Intelligence devices only |
-| **2. mlx-swift-examples (LLMEval)** | Apple's MLX Framework | App Documents (`.safetensors`) | ~1GB – 2GB per app | All Apple Silicon (iOS 17+) |
-| **3. llama.cpp (llama.swift)** | ggml C-Bindings | App Documents (`.gguf`) | ~800MB – 2GB per app | All Apple Silicon (iOS 16+) |
 
 ## License
 
