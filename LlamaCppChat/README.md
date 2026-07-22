@@ -1,4 +1,6 @@
-# OnDeviceLLM
+# LlamaCppChat (OnDeviceLLM)
+
+> Part of the [iOS On-Device LLM Showcase](../README.md) — this is the **llama.cpp** approach. The engine conforms to the shared [`LLMEngine`](../Packages/LLMEngineKit/Sources/LLMEngineKit/LLMEngine.swift) protocol from `LLMEngineKit`.
 
 A native iOS app that runs large language models **fully on-device** using [llama.cpp](https://github.com/ggml-org/llama.cpp) with Metal GPU acceleration. No server, no API key — download a GGUF model once and chat offline.
 
