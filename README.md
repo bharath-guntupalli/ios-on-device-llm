@@ -1,103 +1,99 @@
 # iOS On-Device LLM Showcase
 
-**Three ways to run a large language model entirely on-device on iOS — compared side by side.**
+Three ways to run a language model entirely on an iPhone, built as small apps you can read side by side. No server and no API key: you download a model once (or use the one built into iOS) and chat offline.
 
-No server. No API key. Download (or use the built-in) model once, then chat fully offline. This repo is an educational proof-of-concept for iOS developers evaluating on-device inference, and a staging ground for code that will later be lifted into a production app.
+It is a learning project first. Each app is kept small on purpose, and the parts that hold up will get pulled into a real app later.
 
-## Why this exists
+## Why three apps
 
-Running LLMs on iPhone hardware has three realistic paths in 2026, each with different trade-offs in model choice, minimum OS, memory behavior, and setup cost. Instead of reading three blog posts, you can open three small, self-contained apps that do the *same thing* (streaming multi-turn chat) with the *same abstraction* (`LLMEngine`), and diff them.
+There are three realistic ways to run an LLM on iPhone hardware right now, and they disagree on almost everything: which model you can run, which iOS version you need, how much storage it costs, and how much setup it takes. Instead of describing the differences, this repo builds all three as the same app (streaming multi-turn chat) behind the same Swift protocol (`LLMEngine`), so you can open them next to each other and compare.
 
-The shared protocol also demonstrates the production pattern this enables: a **fallback chain** that tries the zero-cost system model first and degrades gracefully on older hardware.
+The shared protocol pays off in production too. You can chain the engines so the app tries the free built-in model first and falls back to the others when the hardware cannot run it.
 
-## The three approaches
+## Comparison
 
-| | [llama.cpp](LlamaCppChat/) | [MLX Swift](MLXChat/) | [Foundation Models](FoundationModelsChat/) |
-|---|---|---|---|
-| **Status** | ✅ Done (Phase 1) | 🔜 Planned (Phase 2) | 🔜 Planned (Phase 3) |
-| Framework | [llama.cpp](https://github.com/ggml-org/llama.cpp) via [llama.swift](https://github.com/mattt/llama.swift) | [mlx-swift-examples](https://github.com/ml-explore/mlx-swift-examples) (MLXLLM) | Apple's built-in [FoundationModels](https://developer.apple.com/documentation/foundationmodels) |
-| Model format | GGUF (quantized) | MLX safetensors | Apple's ~3B system model |
-| Example model | Llama 3.2 1B Q4_K_M (~0.8 GB) | Llama 3.2 1B 4-bit (~0.7 GB) | built into iOS |
-| Weights download | 1 file from Hugging Face | HF repo snapshot (multi-file) | none — ships with the OS |
-| Weights stored in | App Documents (`.gguf`) | App Documents (`.safetensors`) | OS system partition (0 MB per app) |
-| Min OS / hardware | broad (Metal or CPU) | device only (Metal required) | iOS 26+, Apple Intelligence devices |
-| Simulator support | ✅ (CPU fallback) | ❌ | ⚠️ macOS host must support AI |
-| API level you touch | raw C API | high-level Swift | high-level Swift |
+| Approach | Engine Used | Model Location | Storage Needed | Device Support |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Apple Foundation Models Framework** | iOS Native System Service | OS System Partition | 0 MB | Apple Intelligence devices only |
+| **2. mlx-swift-examples (LLMEval)** | Apple's MLX Framework | App Documents (`.safetensors`) | ~1 to 2 GB per app | All Apple Silicon (iOS 17+) |
+| **3. llama.cpp (llama.swift)** | ggml C-Bindings | App Documents (`.gguf`) | ~800 MB to 2 GB per app | All Apple Silicon (iOS 16+) |
+
+Only the llama.cpp app is built today (Phase 1). The other two are planned. Each approach has its own project and README: [LlamaCppChat](LlamaCppChat/), [MLXChat](MLXChat/), and [FoundationModelsChat](FoundationModelsChat/).
 
 ## Repository layout
 
 ```
-├── Packages/LLMEngineKit/     Shared abstraction: LLMEngine protocol, ChatMessage,
+├── Packages/LLMEngineKit/     Shared code: LLMEngine protocol, ChatMessage,
 │                              EngineAvailability, GenerationMetrics, EngineSelector
-├── LlamaCppChat/              Phase 1 — llama.cpp app (complete)
-├── MLXChat/                   Phase 2 — MLX Swift app (planned)
-└── FoundationModelsChat/      Phase 3 — Foundation Models app (planned)
+├── LlamaCppChat/              Phase 1: llama.cpp app (built)
+├── MLXChat/                   Phase 2: MLX Swift app (planned)
+└── FoundationModelsChat/      Phase 3: Foundation Models app (planned)
 ```
 
-Each app is an independent Xcode project you can open, build, and read on its own — only the small `LLMEngineKit` local package is shared. That keeps every example self-contained (you don't pull MLX's dependency graph to study the llama.cpp app) while guaranteeing all three implement the exact same contract.
+Each app is its own Xcode project you can open and read on its own. Only the small `LLMEngineKit` package is shared, so studying the llama.cpp app never drags in MLX's dependencies, and all three still implement the same contract.
 
 ## The shared abstraction
 
-Every engine hides behind one protocol ([Packages/LLMEngineKit](Packages/LLMEngineKit/Sources/LLMEngineKit/LLMEngine.swift)):
+Every engine sits behind one protocol, `LLMEngine` (in [Packages/LLMEngineKit](Packages/LLMEngineKit/Sources/LLMEngineKit/LLMEngine.swift)):
 
 ```swift
 public protocol LLMEngine: Sendable {
     static var engineName: String { get }
-    static func availability() -> EngineAvailability   // cheap device/OS probe
-    func load() async throws                           // config injected at init, not here
+    static func availability() -> EngineAvailability   // cheap device/OS check
+    func load() async throws                           // config is passed at init, not here
     func unload() async
     func generate(_ userMessage: String) async -> AsyncThrowingStream<String, Error>
     func stopGenerating() async
     func resetConversation() async
-    var lastMetrics: GenerationMetrics? { get async }  // benchmark instrumentation
+    var lastMetrics: GenerationMetrics? { get async }  // for the benchmarks
 }
 ```
 
-Engine-specific details never leak: llama.cpp's KV-cache management, MLX's Hub snapshots, and Foundation Models' snapshot-to-delta diffing all live behind `generate`'s uniform stream of text deltas.
+The engine-specific work stays hidden. llama.cpp's KV-cache handling, MLX's model downloads, and Foundation Models' snapshot diffing all come out as the same stream of text deltas.
 
-### Production fallback chain
+### Falling back between engines
 
-Because availability is a first-class probe, a production app composes engines in preference order — the whole reason this abstraction exists:
+Availability is a plain function you can call before loading anything, so a production app can list its engines in order of preference and take the first one that runs:
 
 ```swift
 let engine = EngineSelector.firstAvailable(from: [
-    EngineCandidate(name: "Foundation Models",           // free, zero-download…
+    EngineCandidate(name: "Foundation Models",        // free, nothing to download,
                     availability: FoundationModelsEngine.availability,
-                    make: { FoundationModelsEngine() }),  // …but iOS 26 + AI-eligible only
-    EngineCandidate(name: "MLX",                          // Metal-optimized…
+                    make: { FoundationModelsEngine() }),  // but needs iOS 26 and an eligible device
+    EngineCandidate(name: "MLX",                      // Metal-optimized, device only
                     availability: MLXChatEngine.availability,
                     make: { MLXChatEngine(modelID: "mlx-community/Llama-3.2-1B-Instruct-4bit") }),
-    EngineCandidate(name: "llama.cpp",                    // …and the runs-anywhere floor
+    EngineCandidate(name: "llama.cpp",                // runs just about anywhere
                     availability: LlamaEngine.availability,
                     make: { LlamaEngine(modelURL: url, family: .llama3) }),
-])                                                        // nil → cloud fallback / error UI
+])   // nil means nothing local can run it, so fall back to cloud or show an error
 ```
 
-`EngineAvailability.unavailable(reason:)` carries *why* (e.g. Foundation Models distinguishes "device not eligible" from "Apple Intelligence not enabled" from "model still downloading"), so the UI can tell the user what to do about it.
+When an engine is not available it says why. Foundation Models, for example, reports whether the device is ineligible, Apple Intelligence is switched off, or the model is still downloading, so the UI can tell the user what to fix.
 
-## Benchmarks (Phase 4 — coming)
+## Benchmarks
 
-Same prompt set, same physical device (iPhone 12, 4 GB — the design floor), cold + warm runs, N=3 median, instrumented via `GenerationMetrics`.
+Coming in Phase 4: the same prompts on the same phone (an iPhone 12 with 4 GB, the low end we design for), cold and warm, three runs each, measured through `GenerationMetrics`.
 
-| Engine | Model | Disk | Cold load | TTFT | tok/s | Peak memory | Min OS | Setup complexity |
+| Engine | Model | Disk | Cold load | TTFT | tok/s | Peak memory | Min OS | Setup |
 |---|---|---|---|---|---|---|---|---|
-| llama.cpp | Llama 3.2 1B Q4_K_M | 0.8 GB | – | – | – | – | app target | 1 SPM dep + 1-file download |
-| MLX | Llama 3.2 1B 4-bit | ~0.7 GB | – | – | – | – | device w/ Metal | 1 SPM dep + Hub snapshot |
-| Foundation Models | ~3B system model | 0 | – | – | – | – | iOS 26 + AI | zero |
+| llama.cpp | Llama 3.2 1B Q4_K_M | 0.8 GB | TBD | TBD | TBD | TBD | app target | 1 SPM dep, 1-file download |
+| MLX | Llama 3.2 1B 4-bit | ~0.7 GB | TBD | TBD | TBD | TBD | device with Metal | 1 SPM dep, Hub snapshot |
+| Foundation Models | ~3B system model | 0 | TBD | TBD | TBD | TBD | iOS 26 with AI | none |
 
 ## Roadmap
 
-- [x] **Phase 1** — llama.cpp chat app, repo structure, `LLMEngineKit` shared protocol
-- [ ] **Phase 2** — MLX Swift app (`MLXChatEngine`, Hub snapshot download, Metal cache limits)
-- [ ] **Phase 3** — Apple Foundation Models app (availability mapping, snapshot→delta adapter)
-- [ ] **Phase 4** — benchmark suite + results table above
+- [x] Phase 1: llama.cpp chat app, repo structure, and the `LLMEngineKit` protocol
+- [ ] Phase 2: MLX Swift app (`MLXChatEngine`, Hub snapshot download, Metal cache limits)
+- [ ] Phase 3: Apple Foundation Models app (availability mapping, snapshot-to-delta adapter)
+- [ ] Phase 4: benchmark suite and the numbers above
 
 ## Requirements
 
-- Xcode 26+, iOS 26.5 deployment target (llama.cpp app)
-- A physical device for real performance numbers — simulators have no ggml/MLX Metal backend
-- For device builds: set your Development Team and enable the **Increased Memory Limit** capability on the App ID
+- Xcode 26 or newer. The llama.cpp app targets iOS 26.5.
+- Use a real device for meaningful speed numbers. The simulator has no Metal backend for ggml or MLX, so llama.cpp falls back to CPU and MLX will not run at all.
+- For device builds, set your Development Team and turn on the Increased Memory Limit capability for the App ID.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
