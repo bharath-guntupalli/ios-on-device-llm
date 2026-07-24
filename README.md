@@ -18,7 +18,7 @@ The shared protocol pays off in production too. You can chain the engines so the
 | **2. mlx-swift-examples (LLMEval)** | Apple's MLX Framework | App Documents (`.safetensors`) | ~1 to 2 GB per app | All Apple Silicon (iOS 17+) |
 | **3. llama.cpp (llama.swift)** | ggml C-Bindings | App Documents (`.gguf`) | ~800 MB to 2 GB per app | All Apple Silicon (iOS 16+) |
 
-Only the llama.cpp app is built today (Phase 1). The other two are planned. Each approach has its own project and README: [LlamaCppChat](LlamaCppChat/), [MLXChat](MLXChat/), and [FoundationModelsChat](FoundationModelsChat/).
+The llama.cpp app is complete (Phase 1) and the Foundation Models app is in progress (Phase 2, a smart-notes assistant with its iOS 26 surface built and an iOS 27 beta plan written). MLX comes after. Each approach has its own project and README: [LlamaCppChat](LlamaCppChat/), [FoundationModelsChat](FoundationModelsChat/), and [MLXChat](MLXChat/).
 
 ## Repository layout
 
@@ -26,8 +26,8 @@ Only the llama.cpp app is built today (Phase 1). The other two are planned. Each
 ├── Packages/LLMEngineKit/     Shared code: LLMEngine protocol, ChatMessage,
 │                              EngineAvailability, GenerationMetrics, EngineSelector
 ├── LlamaCppChat/              Phase 1: llama.cpp app (built)
-├── MLXChat/                   Phase 2: MLX Swift app (planned)
-└── FoundationModelsChat/      Phase 3: Foundation Models app (planned)
+├── FoundationModelsChat/      Phase 2: Foundation Models smart-notes app (in progress)
+└── MLXChat/                   Phase 3: MLX Swift app (planned)
 ```
 
 Each app is its own Xcode project you can open and read on its own. Only the small `LLMEngineKit` package is shared, so studying the llama.cpp app never drags in MLX's dependencies, and all three still implement the same contract.
@@ -84,8 +84,8 @@ Coming in Phase 4: the same prompts on the same phone (an iPhone 12 with 4 GB, t
 ## Roadmap
 
 - [x] Phase 1: llama.cpp chat app, repo structure, and the `LLMEngineKit` protocol
-- [ ] Phase 2: MLX Swift app (`MLXChatEngine`, Hub snapshot download, Metal cache limits)
-- [ ] Phase 3: Apple Foundation Models app (availability mapping, snapshot-to-delta adapter)
+- [ ] Phase 2: Apple Foundation Models smart-notes app — iOS 26 surface built (streaming chat, guided generation, tools, dynamic schemas, content tagging, transcript persistence); iOS 27 beta features (skills, Private Cloud Compute, phone-a-friend, baton-pass, Spotlight RAG) planned in [PHASE-B-PLAN.md](FoundationModelsChat/PHASE-B-PLAN.md)
+- [ ] Phase 3: MLX Swift app (`MLXChatEngine`, Hub snapshot download, Metal cache limits)
 - [ ] Phase 4: benchmark suite and the numbers above
 
 ## Requirements
