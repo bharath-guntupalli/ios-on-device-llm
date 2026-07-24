@@ -14,6 +14,7 @@ import SwiftUI
 struct RootTabView: View {
     @Environment(AvailabilityGate.self) private var gate
     @Environment(\.scenePhase) private var scenePhase
+    @State private var assistant = NotesAssistant()
 
     var body: some View {
         TabView {
@@ -25,7 +26,7 @@ struct RootTabView: View {
             Tab("Assistant", systemImage: "sparkles") {
                 NavigationStack {
                     if case .available = gate.state {
-                        PlaceholderView(title: "Assistant", note: "Milestone 3 adds chat here.")
+                        AssistantChatView(assistant: assistant)
                     } else {
                         AvailabilityGateView()
                     }

@@ -322,20 +322,20 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		F0DE10000000000000000014 /* Build configuration list for PBXProject "FoundationModelsChat" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				F0DE10000000000000000015 /* Debug */,
-				F0DE10000000000000000016 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		F0DE10000000000000000010 /* Build configuration list for PBXNativeTarget "FoundationModelsChat" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F0DE10000000000000000017 /* Debug */,
 				F0DE10000000000000000018 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F0DE10000000000000000014 /* Build configuration list for PBXProject "FoundationModelsChat" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F0DE10000000000000000015 /* Debug */,
+				F0DE10000000000000000016 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
