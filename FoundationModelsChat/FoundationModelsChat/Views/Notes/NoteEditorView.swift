@@ -16,6 +16,7 @@ struct NoteEditorView: View {
     @Environment(AvailabilityGate.self) private var gate
     @Bindable var note: Note
     @State private var edited = false
+    @State private var showingTemplateFill = false
 
     var body: some View {
         Form {
@@ -40,6 +41,21 @@ struct NoteEditorView: View {
         }
         .navigationTitle(note.displayTitle)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if case .available = gate.state {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingTemplateFill = true
+                    } label: {
+                        Label("Fill Template", systemImage: "tablecells")
+                    }
+                    .disabled(note.body.count < 20)
+                }
+            }
+        }
+        .sheet(isPresented: $showingTemplateFill) {
+            TemplateFillView(note: note)
+        }
         .onChange(of: note.title) { _, _ in edited = true }
         .onChange(of: note.body) { _, _ in edited = true }
         .onDisappear {

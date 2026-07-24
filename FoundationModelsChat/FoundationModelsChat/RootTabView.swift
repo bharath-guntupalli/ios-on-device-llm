@@ -13,8 +13,8 @@ import SwiftUI
 
 struct RootTabView: View {
     @Environment(AvailabilityGate.self) private var gate
+    @Environment(NotesAssistant.self) private var assistant
     @Environment(\.scenePhase) private var scenePhase
-    @State private var assistant = NotesAssistant()
 
     var body: some View {
         TabView {

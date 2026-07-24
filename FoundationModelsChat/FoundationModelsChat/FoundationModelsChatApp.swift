@@ -19,6 +19,7 @@ struct FoundationModelsChatApp: App {
 
     private let container: ModelContainer
     private let notesStore: NotesStore
+    private let assistant: NotesAssistant
 
     init() {
         do {
@@ -26,7 +27,15 @@ struct FoundationModelsChatApp: App {
         } catch {
             fatalError("Could not create SwiftData container: \(error)")
         }
-        notesStore = NotesStore(context: container.mainContext)
+        let store = NotesStore(context: container.mainContext)
+        notesStore = store
+        // The assistant gets its capabilities here: search and create notes,
+        // plus calendar/reminder access. The model chooses when to call them.
+        assistant = NotesAssistant(tools: [
+            SearchNotesTool(store: store),
+            CreateNoteTool(store: store),
+            CalendarTool(service: CalendarService()),
+        ])
     }
 
     var body: some Scene {
@@ -34,6 +43,7 @@ struct FoundationModelsChatApp: App {
             RootTabView()
                 .environment(gate)
                 .environment(notesStore)
+                .environment(assistant)
                 .modelContainer(container)
         }
     }
