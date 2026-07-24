@@ -13,6 +13,7 @@ import SwiftUI
 
 struct NoteEditorView: View {
     @Environment(NotesStore.self) private var store
+    @Environment(AvailabilityGate.self) private var gate
     @Bindable var note: Note
     @State private var edited = false
 
@@ -31,14 +32,35 @@ struct NoteEditorView: View {
                     TagWrap(tags: note.tags)
                 }
             }
+            if case .available = gate.state {
+                Section {
+                    NoteAIActionsView(note: note)
+                }
+            }
         }
         .navigationTitle(note.displayTitle)
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: note.title) { _, _ in edited = true }
         .onChange(of: note.body) { _, _ in edited = true }
         .onDisappear {
-            if edited {
-                store.noteDidChange(note)
+            guard edited else { return }
+            store.noteDidChange(note)
+            autoTag()
+        }
+    }
+
+    /// Fire-and-forget auto-tagging with the .contentTagging use case.
+    /// Runs after the editing session ends; merges non-destructively.
+    private func autoTag() {
+        let noteToTag = note
+        let currentStore = store
+        Task {
+            let fresh = await TaggingService().tags(for: noteToTag.body)
+            guard !fresh.isEmpty else { return }
+            let merged = Array(Set(noteToTag.tags).union(fresh)).sorted()
+            if merged != noteToTag.tags.sorted() {
+                noteToTag.tags = merged
+                currentStore.noteDidChange(noteToTag)
             }
         }
     }
