@@ -9,11 +9,13 @@
 //  stays useful on ineligible devices.
 //
 
+import SwiftData
 import SwiftUI
 
 struct RootTabView: View {
     @Environment(AvailabilityGate.self) private var gate
     @Environment(NotesAssistant.self) private var assistant
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -26,7 +28,8 @@ struct RootTabView: View {
             Tab("Assistant", systemImage: "sparkles") {
                 NavigationStack {
                     if case .available = gate.state {
-                        AssistantChatView(assistant: assistant)
+                        AssistantChatView(assistant: assistant,
+                                          transcriptStore: TranscriptStore(context: modelContext))
                     } else {
                         AvailabilityGateView()
                     }
@@ -34,7 +37,7 @@ struct RootTabView: View {
             }
             Tab("Settings", systemImage: "gearshape") {
                 NavigationStack {
-                    PlaceholderView(title: "Settings", note: "Milestone 6 adds options here.")
+                    SettingsView()
                 }
             }
         }
@@ -46,18 +49,8 @@ struct RootTabView: View {
     }
 }
 
-/// Temporary milestone placeholder, replaced as features land.
-struct PlaceholderView: View {
-    let title: String
-    let note: String
-
-    var body: some View {
-        ContentUnavailableView(title, systemImage: "hammer", description: Text(note))
-            .navigationTitle(title)
-    }
-}
-
 #Preview {
     RootTabView()
         .environment(AvailabilityGate())
+        .environment(NotesAssistant())
 }

@@ -11,11 +11,13 @@
 import SwiftUI
 
 struct AssistantChatView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var viewModel: AssistantViewModel
     @State private var draft = ""
 
-    init(assistant: NotesAssistant) {
-        _viewModel = State(initialValue: AssistantViewModel(assistant: assistant))
+    init(assistant: NotesAssistant, transcriptStore: TranscriptStore? = nil) {
+        _viewModel = State(initialValue: AssistantViewModel(assistant: assistant,
+                                                            transcriptStore: transcriptStore))
     }
 
     var body: some View {
@@ -24,7 +26,15 @@ struct AssistantChatView: View {
             if let error = viewModel.errorMessage {
                 ErrorBanner(message: error)
             }
+            if let info = viewModel.infoMessage {
+                InfoBanner(message: info)
+            }
             inputBar
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background {
+                viewModel.persist()
+            }
         }
         .navigationTitle("Assistant")
         .navigationBarTitleDisplayMode(.inline)

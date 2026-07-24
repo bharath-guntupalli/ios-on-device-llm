@@ -55,26 +55,33 @@ final class NotesAssistant {
         session.transcript
     }
 
+    /// Set when the last turn hit the context window and the conversation
+    /// was condensed — the UI surfaces this as an informational toast.
+    private(set) var didCondenseLastTurn = false
+
     /// Streams response deltas for one user message. The session keeps the
     /// multi-turn history internally (and reuses its KV cache on append).
+    /// On context overflow, the transcript is condensed once and the
+    /// message retried transparently.
     func send(_ text: String) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 isResponding = true
+                didCondenseLastTurn = false
                 defer { isResponding = false }
 
-                var emitted = ""
                 do {
-                    let stream = session.streamResponse(to: text, options: options)
-                    for try await snapshot in stream {
-                        if Task.isCancelled { break }
-                        let full = snapshot.content
-                        guard full.count > emitted.count else { continue }
-                        let delta = String(full.dropFirst(emitted.count))
-                        emitted = full
-                        continuation.yield(delta)
-                    }
+                    try await streamOnce(text, into: continuation)
                     continuation.finish()
+                } catch let error where FMErrorPresenter.isContextOverflow(error) {
+                    do {
+                        condenseSession()
+                        didCondenseLastTurn = true
+                        try await streamOnce(text, into: continuation)
+                        continuation.finish()
+                    } catch {
+                        continuation.finish(throwing: error)
+                    }
                 } catch {
                     continuation.finish(throwing: error)
                 }
@@ -83,6 +90,43 @@ final class NotesAssistant {
                 task.cancel()
             }
         }
+    }
+
+    private func streamOnce(_ text: String,
+                            into continuation: AsyncThrowingStream<String, Error>.Continuation) async throws {
+        var emitted = ""
+        let stream = session.streamResponse(to: text, options: options)
+        for try await snapshot in stream {
+            if Task.isCancelled { break }
+            let full = snapshot.content
+            guard full.count > emitted.count else { continue }
+            let delta = String(full.dropFirst(emitted.count))
+            emitted = full
+            continuation.yield(delta)
+        }
+    }
+
+    /// Context-overflow recovery: keep the instructions entry plus the
+    /// most recent turns and rebuild the session from that transcript.
+    /// Note the KV-cache trade-off — rewriting the prefix invalidates the
+    /// cache, so the next turn pays a full prefill. That is the price of
+    /// staying inside the window; appending normally stays cached.
+    private func condenseSession() {
+        let entries = Array(session.transcript)
+        var kept: [Transcript.Entry] = []
+
+        if let first = entries.first, case .instructions = first {
+            kept.append(first)
+        }
+        let recent = entries.suffix(4).filter { entry in
+            if case .instructions = entry { return false }
+            return true
+        }
+        kept.append(contentsOf: recent)
+
+        session = runtime.makeSession(tools: tools,
+                                      instructions: nil,
+                                      transcript: Transcript(entries: kept))
     }
 
     /// Fresh conversation, same tools and instructions.

@@ -23,7 +23,7 @@ struct FoundationModelsChatApp: App {
 
     init() {
         do {
-            container = try ModelContainer(for: Note.self)
+            container = try ModelContainer(for: Note.self, ChatSessionRecord.self)
         } catch {
             fatalError("Could not create SwiftData container: \(error)")
         }

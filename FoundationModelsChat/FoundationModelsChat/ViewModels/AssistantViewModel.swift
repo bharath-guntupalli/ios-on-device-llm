@@ -14,9 +14,9 @@ import Observation
 @Observable
 final class AssistantViewModel {
 
-    struct DisplayMessage: Identifiable, Equatable {
-        enum Role { case user, assistant }
-        let id = UUID()
+    struct DisplayMessage: Identifiable, Equatable, Codable {
+        enum Role: String, Codable { case user, assistant }
+        var id = UUID()
         let role: Role
         var text: String
     }
@@ -24,12 +24,27 @@ final class AssistantViewModel {
     private(set) var messages: [DisplayMessage] = []
     private(set) var isGenerating = false
     var errorMessage: String?
+    var infoMessage: String?
 
     let assistant: NotesAssistant
+    private let transcriptStore: TranscriptStore?
     private var generationTask: Task<Void, Never>?
 
-    init(assistant: NotesAssistant) {
+    init(assistant: NotesAssistant, transcriptStore: TranscriptStore? = nil) {
         self.assistant = assistant
+        self.transcriptStore = transcriptStore
+        // Restore the previous conversation: display messages for the UI,
+        // transcript for the model's context.
+        if let saved = transcriptStore?.load() {
+            messages = saved.messages
+            assistant.restore(transcript: saved.transcript)
+        }
+    }
+
+    /// Persist the conversation (called when the app goes to background).
+    func persist() {
+        guard !messages.isEmpty else { return }
+        transcriptStore?.save(transcript: assistant.transcript, messages: messages)
     }
 
     func prewarm() {
@@ -50,6 +65,9 @@ final class AssistantViewModel {
                 for try await delta in assistant.send(trimmed) {
                     messages[messages.count - 1].text += delta
                 }
+                if assistant.didCondenseLastTurn {
+                    infoMessage = "The conversation hit the context window and was condensed."
+                }
             } catch {
                 handleFailure(error)
             }
@@ -65,7 +83,9 @@ final class AssistantViewModel {
         guard !isGenerating else { return }
         messages = []
         errorMessage = nil
+        infoMessage = nil
         assistant.resetConversation()
+        transcriptStore?.clear()
     }
 
     private func handleFailure(_ error: Error) {
