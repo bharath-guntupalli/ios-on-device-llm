@@ -19,7 +19,7 @@ struct RootTabView: View {
         TabView {
             Tab("Notes", systemImage: "note.text") {
                 NavigationStack {
-                    PlaceholderView(title: "Notes", note: "Milestone 2 adds notes here.")
+                    NotesListView()
                 }
             }
             Tab("Assistant", systemImage: "sparkles") {

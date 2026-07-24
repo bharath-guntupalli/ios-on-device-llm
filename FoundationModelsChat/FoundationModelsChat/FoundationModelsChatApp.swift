@@ -10,16 +10,31 @@
 //  user-actionable screen instead of a dead assistant tab.
 //
 
+import SwiftData
 import SwiftUI
 
 @main
 struct FoundationModelsChatApp: App {
     @State private var gate = AvailabilityGate()
 
+    private let container: ModelContainer
+    private let notesStore: NotesStore
+
+    init() {
+        do {
+            container = try ModelContainer(for: Note.self)
+        } catch {
+            fatalError("Could not create SwiftData container: \(error)")
+        }
+        notesStore = NotesStore(context: container.mainContext)
+    }
+
     var body: some Scene {
         WindowGroup {
             RootTabView()
                 .environment(gate)
+                .environment(notesStore)
+                .modelContainer(container)
         }
     }
 }
