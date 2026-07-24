@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "group:LlamaCppChat/OnDeviceLLM.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:FoundationModelsChat/FoundationModelsChat.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/LLMEngineKit">
+   </FileRef>
+</Workspace>

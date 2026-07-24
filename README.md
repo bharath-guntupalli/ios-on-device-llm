@@ -23,12 +23,15 @@ The llama.cpp app is complete (Phase 1) and the Foundation Models app is in prog
 ## Repository layout
 
 ```
+├── ios-on-device-llm.xcworkspace   Open THIS when working on more than one app
 ├── Packages/LLMEngineKit/     Shared code: LLMEngine protocol, ChatMessage,
 │                              EngineAvailability, GenerationMetrics, EngineSelector
 ├── LlamaCppChat/              Phase 1: llama.cpp app (built)
 ├── FoundationModelsChat/      Phase 2: Foundation Models smart-notes app (in progress)
 └── MLXChat/                   Phase 3: MLX Swift app (planned)
 ```
+
+Heads-up on the workspace: Xcode allows a local Swift package to be loaded by only one open project at a time. Opening two of the app projects in separate windows makes the second one fail with "Missing package product 'LLMEngineKit'". Either keep one project open at a time, or open `ios-on-device-llm.xcworkspace`, which holds both apps and the package in a single window.
 
 Each app is its own Xcode project you can open and read on its own. Only the small `LLMEngineKit` package is shared, so studying the llama.cpp app never drags in MLX's dependencies, and all three still implement the same contract.
 
