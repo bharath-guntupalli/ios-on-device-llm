@@ -12,13 +12,13 @@ The shared protocol pays off in production too. You can chain the engines so the
 
 ## Comparison
 
-| Approach | Engine Used | Model Location | Storage Needed | Device Support |
-| :--- | :--- | :--- | :--- | :--- |
-| **1. Apple Foundation Models Framework** | iOS Native System Service | OS System Partition | 0 MB | Apple Intelligence devices only |
-| **2. mlx-swift-examples (LLMEval)** | Apple's MLX Framework | App Documents (`.safetensors`) | ~1 to 2 GB per app | All Apple Silicon (iOS 17+) |
-| **3. llama.cpp (llama.swift)** | ggml C-Bindings | App Documents (`.gguf`) | ~800 MB to 2 GB per app | All Apple Silicon (iOS 16+) |
+| Approach | Engine Used | Model Location | Storage Needed | Device Support | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Apple Foundation Models Framework** | iOS Native System Service | OS System Partition | 0 MB | Apple Intelligence devices only | iOS 26 features built. iOS 27 features on hold |
+| **mlx-swift-lm** | Apple's MLX Framework | App Documents (`.safetensors`) | ~1 to 2 GB per app | All Apple Silicon (iOS 17+) | Not started. Next up |
+| **llama.cpp (llama.swift)** | ggml C-Bindings | App Documents (`.gguf`) | ~800 MB to 2 GB per app | All Apple Silicon (iOS 16+) | Built |
 
-The llama.cpp app is complete (Phase 1) and the Foundation Models app is in progress (Phase 2, a smart-notes assistant with its iOS 26 surface built and an iOS 27 beta plan written). MLX comes after. Each approach has its own project and README: [LlamaCppChat](LlamaCppChat/), [FoundationModelsChat](FoundationModelsChat/), and [MLXChat](MLXChat/).
+The llama.cpp app is complete (Phase 1). The Foundation Models app (Phase 2) has everything the iOS 26 SDK offers, and the rest of it is on hold because it needs Xcode 27 and an iOS 27 device. MLX (Phase 3) is the next thing that can actually be built with the current toolchain. Each approach has its own project and README: [LlamaCppChat](LlamaCppChat/), [FoundationModelsChat](FoundationModelsChat/), and [MLXChat](MLXChat/).
 
 ## Repository layout
 
@@ -27,8 +27,9 @@ The llama.cpp app is complete (Phase 1) and the Foundation Models app is in prog
 ├── Packages/LLMEngineKit/     Shared code: LLMEngine protocol, ChatMessage,
 │                              EngineAvailability, GenerationMetrics, EngineSelector
 ├── LlamaCppChat/              Phase 1: llama.cpp app (built)
-├── FoundationModelsChat/      Phase 2: Foundation Models smart-notes app (in progress)
-└── MLXChat/                   Phase 3: MLX Swift app (planned)
+├── FoundationModelsChat/      Phase 2: Foundation Models smart-notes app
+│                              (iOS 26 features built, iOS 27 features on hold)
+└── MLXChat/                   Phase 3: MLX Swift app (not started, next up)
 ```
 
 Heads-up on the workspace: Xcode allows a local Swift package to be loaded by only one open project at a time. Opening two of the app projects in separate windows makes the second one fail with "Missing package product 'LLMEngineKit'". Either keep one project open at a time, or open `ios-on-device-llm.xcworkspace`, which holds both apps and the package in a single window.
@@ -76,7 +77,7 @@ When an engine is not available it says why. Foundation Models, for example, rep
 
 ## Benchmarks
 
-Coming in Phase 4: the same prompts on the same phone (an iPhone 12 with 4 GB, the low end we design for), cold and warm, three runs each, measured through `GenerationMetrics`.
+Coming in Phase 4: the same prompts on the same phone (an iPhone 12 with 4 GB, the low end we design for), cold and warm, three runs each, measured through `GenerationMetrics`. This is waiting on a second working engine and on real device runs, not on anything iOS 27.
 
 | Engine | Model | Disk | Cold load | TTFT | tok/s | Peak memory | Min OS | Setup |
 |---|---|---|---|---|---|---|---|---|
@@ -87,13 +88,15 @@ Coming in Phase 4: the same prompts on the same phone (an iPhone 12 with 4 GB, t
 ## Roadmap
 
 - [x] Phase 1: llama.cpp chat app, repo structure, and the `LLMEngineKit` protocol
-- [ ] Phase 2: Apple Foundation Models smart-notes app — iOS 26 surface built (streaming chat, guided generation, tools, dynamic schemas, content tagging, transcript persistence); iOS 27 beta features (skills, Private Cloud Compute, phone-a-friend, baton-pass, Spotlight RAG) planned in [PHASE-B-PLAN.md](FoundationModelsChat/PHASE-B-PLAN.md)
-- [ ] Phase 3: MLX Swift app (`MLXChatEngine`, Hub snapshot download, Metal cache limits)
+- [x] Phase 2a: Apple Foundation Models smart-notes app on the iOS 26 SDK (streaming chat, guided generation, tools, dynamic schemas, content tagging, transcript persistence, debug HUD)
+- [ ] Phase 2b: the rest of Foundation Models (skills, Private Cloud Compute, phone-a-friend, baton-pass, Spotlight RAG). **On hold: needs Xcode 27 and an iOS 27 device.** Fully researched and written up in [PHASE-B-PLAN.md](FoundationModelsChat/PHASE-B-PLAN.md)
+- [ ] Phase 3: MLX Swift app (`MLXChatEngine`, Hub snapshot download, Metal memory limits). **Next up**, and it needs nothing beyond the current Xcode 26
 - [ ] Phase 4: benchmark suite and the numbers above
 
 ## Requirements
 
-- Xcode 26 or newer. The llama.cpp app targets iOS 26.5.
+- Xcode 26 or newer. The llama.cpp app targets iOS 26.5 and the Foundation Models app targets iOS 26.0. Everything currently in the repo builds with Xcode 26.
+- Anything in this repo that needs iOS 27 or Xcode 27 is on hold. That is only the second half of the Foundation Models app, and it is parked behind a clear marker wherever it appears.
 - Use a real device for meaningful speed numbers. The simulator has no Metal backend for ggml or MLX, so llama.cpp falls back to CPU and MLX will not run at all.
 - For device builds, set your Development Team and turn on the Increased Memory Limit capability for the App ID.
 

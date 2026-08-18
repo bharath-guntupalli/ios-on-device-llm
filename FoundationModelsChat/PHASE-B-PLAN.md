@@ -1,4 +1,10 @@
-# Phase B Implementation Plan: iOS 27 Beta Features
+# Phase B Implementation Plan: iOS 27 Features
+
+> **ON HOLD: needs Xcode 27 and an iOS 27 device.**
+>
+> As of August 2026 the development machine has Xcode 26.6 and no iOS 27 SDK or simulator runtime, so none of the work below can be built, run, or even compiled. Do not start it.
+>
+> Nothing else in the repo is blocked by this. The Foundation Models app's Phase A is complete and runs on iOS 26, and the MLX app (Phase 3) needs nothing beyond Xcode 26. Pick this file back up when the toolchain arrives; the plan is preserved exactly as researched, and every `[verify against SDK]` flag in it still needs checking against the shipping SDK, since these APIs were documented from beta material.
 
 This document is a self-contained implementation handoff. Give it to an AI coding agent (or follow it yourself) once the prerequisites below are met. It assumes Phase A of FoundationModelsChat is complete and committed (milestones M1 to M6: scaffold, notes + Spotlight donation, streaming chat, tagging + guided generation, tools + dynamic templates, transcript persistence + debug HUD).
 

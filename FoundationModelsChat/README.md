@@ -4,7 +4,9 @@
 
 A Smart Notes app with an AI assistant, built to exercise as much of Apple's FoundationModels framework as possible. Notes live in SwiftData and get donated to Spotlight; the assistant chats, streams, tags, summarizes, extracts, and calls tools, all with the system model that ships inside iOS. No downloads, no API keys, nothing leaves the device.
 
-The work is split in two phases. **Phase A (built, in this repo)** covers the full iOS 26 GA surface with today's Xcode. **Phase B (planned)** adds the iOS 27 beta surface: skills, Private Cloud Compute, phone-a-friend, baton-pass, and Spotlight RAG. The complete implementation handoff for it lives in [PHASE-B-PLAN.md](PHASE-B-PLAN.md), written so an AI agent can execute it once the prerequisites are ready.
+The work is split in two phases. **Phase A is built and is what you get when you open this project.** It covers the full iOS 26 surface and runs on the current Xcode.
+
+**Phase B is on hold: it needs Xcode 27 and an iOS 27 device.** That is where skills, Private Cloud Compute, phone-a-friend, baton-pass, and Spotlight RAG live. It is fully researched and written up in [PHASE-B-PLAN.md](PHASE-B-PLAN.md), ready to execute once that toolchain is available, but nothing in this project depends on it today. Phase A stands on its own.
 
 ## What Phase A demonstrates
 
@@ -28,7 +30,8 @@ The work is split in two phases. **Phase A (built, in this repo)** covers the fu
 - Xcode 26 or newer. Deployment target is iOS 26.0.
 - **A physical Apple Intelligence device** (iPhone 15 Pro or newer) with Apple Intelligence enabled. The framework does not run in the iOS Simulator; the simulator compiles the app and shows the availability-gate screen, which is itself one of the features.
 - A Development Team set under Signing & Capabilities for device builds.
-- Phase B additionally needs Xcode 27 beta and a device on iOS 27 beta. See [PHASE-B-PLAN.md](PHASE-B-PLAN.md).
+
+That is everything Phase A needs. Phase B is a different story: it is **on hold until Xcode 27 and an iOS 27 device are available**, and no part of it can be built or even compiled before then. See [PHASE-B-PLAN.md](PHASE-B-PLAN.md).
 
 ## Architecture
 
@@ -41,15 +44,15 @@ FoundationModelsChatApp ── ModelContainer (Note, ChatSessionRecord)
  │                     └─ AvailabilityGateView (when the model can't run)
  └─ Settings tab ── GenerationOptions controls, engine probe, DebugHUD
 
-NotesAssistant ── AssistantRuntime (seam) ── Runtime26/BaseRuntime   [Phase A]
-                                          └─ Runtime27/…            [Phase B]
+NotesAssistant ── AssistantRuntime (seam) ── Runtime26/BaseRuntime   [Phase A, built]
+                                          └─ Runtime27/…            [Phase B, on hold]
 Engine/FoundationModelsEngine ── LLMEngineKit conformance (snapshot→delta)
 Tools/ ── SearchNotesTool · CreateNoteTool · CalendarTool
 ```
 
 Where the shared protocol ends: `LLMEngine` is a string-in, string-out contract, which is exactly what the three-engine comparison needs. Tools, structured output, and transcript surgery don't fit that shape, so they live in `NotesAssistant`. The engine adapter is honest about this split, and the Settings tab shows the `EngineSelector` probe working against it.
 
-Every note save donates a `CSSearchableItem` (title, body, tags) under a stable UUID. That makes notes searchable from system Spotlight today and doubles as the retrieval corpus for Phase B's `SpotlightSearchTool` RAG mode.
+Every note save donates a `CSSearchableItem` (title, body, tags) under a stable UUID. That makes notes searchable from system Spotlight today, and it quietly builds the retrieval corpus that the on-hold `SpotlightSearchTool` RAG mode will search whenever Phase B becomes possible.
 
 ## Prompt safety posture
 
@@ -61,15 +64,17 @@ Instructions are trusted and composed only from developer constants; user chat t
 - **#Playground macro**: in Xcode 26 you can put `#Playground { }` next to your code and iterate on prompts with live results in the canvas. Works best with "My Mac" as the destination on an Apple Intelligence Mac.
 - **Foundation Models Instrument**: an Instruments template for profiling request latency and seeing when the KV cache gets invalidated.
 
-## What's next: Phase B
+## Phase B, on hold: needs Xcode 27 and an iOS 27 device
 
-Skills (including user-authored ones), Private Cloud Compute with reasoning levels and token usage, phone-a-friend and baton-pass multi-model orchestration, "ask my notes" RAG via SpotlightSearchTool, and vision attachments. All researched, designed, and written down in [PHASE-B-PLAN.md](PHASE-B-PLAN.md) so it can be executed as soon as Xcode 27 beta and an iOS 27 beta device are available.
+Skills (including user-authored ones), Private Cloud Compute with reasoning levels and token usage, phone-a-friend and baton-pass multi-model orchestration, "ask my notes" RAG via SpotlightSearchTool, and vision attachments. All of it is researched, designed, and written down in [PHASE-B-PLAN.md](PHASE-B-PLAN.md).
+
+None of it can start until Xcode 27 and an iOS 27 device exist on the machine, so it is parked. Phase A is complete and useful without it, and the `AssistantRuntime` protocol in the code is the seam Phase B will plug into, so picking this back up should not require reworking anything that is already built.
 
 ## Future RAG roadmap
 
-Two ways to give the assistant real retrieval over the notes corpus, in order of effort:
+Two ways to give the assistant real retrieval over the notes corpus. The easier one is currently blocked, which makes the harder one the only path open today.
 
-**Option 1: SpotlightSearchTool (Phase B, planned).** iOS 27 beta ships a system tool in the CoreSpotlight framework that plugs straight into a `LanguageModelSession`. The OS builds on-device semantic matching over the `CSSearchableItem`s this app already donates; the model writes its own queries and grounds its answers in the results. No embeddings pipeline, no vector store. Real usage shape:
+**Option 1: SpotlightSearchTool. On hold: needs Xcode 27 and an iOS 27 device.** iOS 27 ships a system tool in the CoreSpotlight framework that plugs straight into a `LanguageModelSession`. The OS builds on-device semantic matching over the `CSSearchableItem`s this app already donates; the model writes its own queries and grounds its answers in the results. No embeddings pipeline, no vector store. Real usage shape:
 
 ```swift
 let tool = SpotlightSearchTool(configuration: .init(
@@ -78,7 +83,7 @@ let tool = SpotlightSearchTool(configuration: .init(
 let session = LanguageModelSession(tools: [tool])
 ```
 
-**Option 2: Custom embeddings (future project, full control).** FoundationModels has no embedding API and Apple's internal embedding model is not exposed, so you build retrieval yourself: `NLContextualEmbedding` from the NaturalLanguage framework (512-dim on iOS, mean-pool the per-token vectors), brute-force cosine similarity via Accelerate (fine up to roughly 10k chunks), then a real vector store (VecturaKit, SVDB, sqlite-vec, ObjectBox, or USearch) when scale demands. Chunk at 200 to 400 tokens with top-k of 3 to 5, and budget the assembled prompt with `tokenCount(for:)` against the ~4k context window.
+**Option 2: Custom embeddings. Available today, and the only RAG path not blocked.** Needs nothing beyond iOS 26, so this is where to start if retrieval matters sooner than Xcode 27 does. FoundationModels has no embedding API and Apple's internal embedding model is not exposed, so you build retrieval yourself: `NLContextualEmbedding` from the NaturalLanguage framework (512-dim on iOS, mean-pool the per-token vectors), brute-force cosine similarity via Accelerate (fine up to roughly 10k chunks), then a real vector store (VecturaKit, SVDB, sqlite-vec, ObjectBox, or USearch) when scale demands. Chunk at 200 to 400 tokens with top-k of 3 to 5, and budget the assembled prompt with `tokenCount(for:)` against the ~4k context window.
 
 Core Spotlight's programmatic search (`CSUserQuery`) is a complement, not a retriever: it hides raw vectors and gives you almost no ranking control.
 
